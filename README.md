@@ -1,51 +1,51 @@
 # m365-actions-mcp-server
 
-MCP server per operazioni di scrittura su Microsoft 365 tramite Microsoft Graph API.
+MCP server for write operations on Microsoft 365 via Microsoft Graph API.
 
-Da usare accanto al connector ms365 read-only di Anthropic per avere sia lettura che scrittura.
+Designed to work alongside Anthropic's read-only ms365 connector to provide full bidirectional access.
 
-## Tool disponibili
+## Available Tools
 
-| Tool | Descrizione |
+| Tool | Description |
 |------|-------------|
-| `m365_send_mail` | Invia una nuova email |
-| `m365_reply_mail` | Rispondi a una mail esistente (reply / reply-all) |
-| `m365_get_attachments` | Scarica gli allegati di una mail |
-| `m365_create_event` | Crea un evento nel calendario |
-| `m365_update_event` | Modifica un evento esistente |
-| `m365_delete_event` | Elimina un evento |
+| `m365_send_mail` | Send a new email |
+| `m365_reply_mail` | Reply to an existing email (reply / reply-all) |
+| `m365_get_attachments` | Download attachments from an email |
+| `m365_create_event` | Create a calendar event |
+| `m365_update_event` | Update an existing event |
+| `m365_delete_event` | Delete an event |
 
-## Prerequisiti
+## Prerequisites
 
 - Node.js >= 18
-- Un'app registrata su Azure AD / Entra ID
+- An app registered on Azure AD / Entra ID
 
-### Configurazione app Azure
+### Azure App Configuration
 
-1. Vai su [Entra ID](https://portal.azure.com) → App registrations → New registration
-2. Nome: `M365 Actions MCP Server`
+1. Go to [Entra ID](https://portal.azure.com) -> App registrations -> New registration
+2. Name: `M365 Actions MCP Server`
 3. Supported account types: **Single tenant**
-4. Redirect URI: piattaforma **Web**, URI `http://localhost:3939/auth/callback`
-5. Crea un **Client Secret** (Certificates & secrets → New client secret)
-6. Aggiungi i permessi **Delegated** (API permissions → Microsoft Graph):
+4. Redirect URI: platform **Web**, URI `http://localhost:3939/auth/callback`
+5. Create a **Client Secret** (Certificates & secrets -> New client secret)
+6. Add **Delegated** permissions (API permissions -> Microsoft Graph):
    - `Mail.Send`
    - `Mail.Read`
    - `Calendars.ReadWrite`
    - `User.Read`
    - `offline_access`
-7. Premi **Grant admin consent**
+7. Click **Grant admin consent**
 
-## Installazione
+## Installation
 
 ```bash
-git clone https://github.com/TUOUSER/m365-actions-mcp-server.git
+git clone https://github.com/dfsolutions/m365-actions-mcp-server.git
 cd m365-actions-mcp-server
 npm install
 ```
 
-## Configurazione
+## Configuration
 
-Copia `.env.example` in `.env` e compila con i dati della tua app Azure:
+Copy `.env.example` to `.env` and fill in your Azure app credentials:
 
 ```bash
 cp .env.example .env
@@ -59,25 +59,25 @@ M365_REDIRECT_URI=http://localhost:3939/auth/callback
 M365_USER_EMAIL=your-email@domain.com
 ```
 
-## Build e avvio
+## Build and Run
 
 ```bash
 npx tsc
 node dist/index.js
 ```
 
-Al primo avvio si aprirà il browser per il login Microsoft. Il token viene cachato in `~/.m365-actions-tokens.json` e riutilizzato automaticamente.
+On the first run, the browser will open for Microsoft login. The token is cached in `~/.m365-actions-tokens.json` and reused automatically.
 
-## Integrazione con Claude Desktop / Cowork
+## Integration with Claude Desktop / Cowork
 
-Aggiungi al file di configurazione MCP:
+Add to your MCP configuration file:
 
 ```json
 {
   "mcpServers": {
     "m365-actions": {
       "command": "node",
-      "args": ["/percorso/completo/m365-actions-mcp-server/dist/index.js"],
+      "args": ["/full/path/to/m365-actions-mcp-server/dist/index.js"],
       "env": {
         "M365_CLIENT_ID": "your-client-id",
         "M365_CLIENT_SECRET": "your-client-secret",
@@ -90,27 +90,27 @@ Aggiungi al file di configurazione MCP:
 }
 ```
 
-In alternativa, se le variabili sono nel `.env` nella cartella del progetto, basta:
+Alternatively, if the variables are in the `.env` file inside the project folder:
 
 ```json
 {
   "mcpServers": {
     "m365-actions": {
       "command": "node",
-      "args": ["/percorso/completo/m365-actions-mcp-server/dist/index.js"]
+      "args": ["/full/path/to/m365-actions-mcp-server/dist/index.js"]
     }
   }
 }
 ```
 
-## Autenticazione
+## Authentication
 
-Il server usa MSAL con flusso **Authorization Code (delegated)**:
-- Al primo avvio apre il browser per il login
-- Salva access + refresh token in `~/.m365-actions-tokens.json`
-- Rinnova automaticamente il token alla scadenza
-- Il refresh token dura ~90 giorni, poi serve un nuovo login
+The server uses MSAL with the **Authorization Code (delegated)** flow:
+- On first run, it opens the browser for login
+- Saves access + refresh token in `~/.m365-actions-tokens.json`
+- Automatically renews the token on expiry
+- The refresh token lasts ~90 days, then a new login is required
 
-## Licenza
+## License
 
 MIT
