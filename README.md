@@ -1,19 +1,53 @@
 # m365-actions-mcp-server
 
-MCP server for write operations on Microsoft 365 via Microsoft Graph API.
+MCP server that adds **write operations** to Microsoft 365 — the missing piece that turns Anthropic's read-only ms365 connector into a full bidirectional integration.
 
-Designed to work alongside Anthropic's read-only ms365 connector to provide full bidirectional access.
+## Why this exists
+
+Anthropic's built-in Microsoft 365 connector gives Claude powerful read access: searching emails, browsing calendars, finding Teams messages, querying SharePoint. But it **cannot send, create, update, or delete anything**. This server fills that gap.
+
+With both connectors running side by side, Claude can complete full workflows end-to-end: read an email and reply to it, check calendar availability and book a meeting, find a Teams conversation and respond — all without leaving the chat.
 
 ## Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `m365_send_mail` | Send a new email |
-| `m365_reply_mail` | Reply to an existing email (reply / reply-all) |
-| `m365_get_attachments` | Download attachments from an email |
-| `m365_create_event` | Create a calendar event |
-| `m365_update_event` | Update an existing event |
-| `m365_delete_event` | Delete an event |
+### Email
+
+| Tool | Description | Works with |
+|------|-------------|------------|
+| `m365_send_mail` | Send a new email | — |
+| `m365_reply_mail` | Reply to an existing email (reply / reply-all) | `outlook_email_search` (Anthropic) to get message ID |
+| `m365_get_attachments` | Download attachments from an email | `outlook_email_search` (Anthropic) to get message ID |
+
+### Calendar
+
+| Tool | Description | Works with |
+|------|-------------|------------|
+| `m365_create_event` | Create a calendar event (with optional Teams link) | `find_meeting_availability` (Anthropic) to check slots |
+| `m365_update_event` | Update an existing event | `outlook_calendar_search` (Anthropic) to get event ID |
+| `m365_delete_event` | Delete an event | `outlook_calendar_search` (Anthropic) to get event ID |
+
+### Teams
+
+| Tool | Description | Works with |
+|------|-------------|------------|
+| `m365_list_teams_and_channels` | List joined teams and their channels | — |
+| `m365_send_channel_message` | Send a message to a Teams channel | `m365_list_teams_and_channels` to get IDs |
+| `m365_send_chat_message` | Send a message in a Teams chat (1:1 or group) | `chat_message_search` (Anthropic) to get chat ID |
+| `m365_reply_to_message` | Reply to an existing Teams message | `chat_message_search` (Anthropic) to get message ID |
+
+## How it works with the Anthropic connector
+
+```
+Anthropic ms365 connector (read)     m365-actions-mcp-server (write)
+─────────────────────────────────    ──────────────────────────────────
+outlook_email_search          ──→    m365_send_mail / m365_reply_mail
+outlook_calendar_search       ──→    m365_create_event / m365_update_event
+find_meeting_availability     ──→    m365_create_event
+chat_message_search           ──→    m365_send_chat_message / m365_reply_to_message
+sharepoint_search             ──→    (read-only, no write needed)
+```
+
+Claude automatically chains these tools together. For example: "Find the email from Marco about the invoice and reply saying we'll pay by Friday" triggers `outlook_email_search` (Anthropic) followed by `m365_reply_mail` (this server).
 
 ## Prerequisites
 
@@ -31,6 +65,10 @@ Designed to work alongside Anthropic's read-only ms365 connector to provide full
    - `Mail.Send`
    - `Mail.Read`
    - `Calendars.ReadWrite`
+   - `Chat.ReadWrite`
+   - `ChannelMessage.Send`
+   - `Team.ReadBasic.All`
+   - `Channel.ReadBasic.All`
    - `User.Read`
    - `offline_access`
 7. Click **Grant admin consent**

@@ -30,6 +30,17 @@ import {
   handleDeleteEvent,
 } from "./tools/calendar.js";
 
+import {
+  ListTeamsAndChannelsInputSchema,
+  SendChannelMessageInputSchema,
+  SendChatMessageInputSchema,
+  ReplyToMessageInputSchema,
+  handleListTeamsAndChannels,
+  handleSendChannelMessage,
+  handleSendChatMessage,
+  handleReplyToMessage,
+} from "./tools/teams.js";
+
 // ── Server ───────────────────────────────────────────────
 
 const server = new McpServer({
@@ -199,6 +210,113 @@ Usa outlook_calendar_search del connector ms365 per ottenere l'event_id prima di
     },
   },
   async (params) => handleDeleteEvent(params)
+);
+
+// ── Teams Tools ─────────────────────────────────────────
+
+server.registerTool(
+  "m365_list_teams_and_channels",
+  {
+    title: "Elenca Team e Canali (Microsoft Teams)",
+    description: `Elenca i team Microsoft Teams dell'utente e i relativi canali.
+
+Parametri:
+  - team_id (string, opzionale): ID di un team specifico per elencarne i canali. Se omesso, elenca tutti i team.
+
+Restituisce la lista di team (con ID, nome, descrizione) oppure la lista di canali di un team specifico.
+
+Usa questo tool come primo passo per ottenere gli ID necessari a m365_send_channel_message e m365_reply_to_message.`,
+    inputSchema: ListTeamsAndChannelsInputSchema,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+  },
+  async (params) => handleListTeamsAndChannels(params)
+);
+
+server.registerTool(
+  "m365_send_channel_message",
+  {
+    title: "Invia Messaggio in Canale Teams",
+    description: `Invia un messaggio in un canale di Microsoft Teams.
+
+Parametri:
+  - team_id (string): ID del team (ottenibile da m365_list_teams_and_channels)
+  - channel_id (string): ID del canale (ottenibile da m365_list_teams_and_channels)
+  - body (string): Contenuto del messaggio (HTML o testo)
+  - subject (string, opzionale): Oggetto/titolo del messaggio
+  - content_type ("html" | "text", default "html"): Formato del contenuto
+
+Restituisce l'ID del messaggio e il link diretto.
+
+Complementa chat_message_search del connector ms365 Anthropic (che è read-only) aggiungendo la capacità di scrivere nei canali.`,
+    inputSchema: SendChannelMessageInputSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
+  },
+  async (params) => handleSendChannelMessage(params)
+);
+
+server.registerTool(
+  "m365_send_chat_message",
+  {
+    title: "Invia Messaggio Chat Teams (1:1 / Gruppo)",
+    description: `Invia un messaggio in una chat Teams esistente (1:1 o di gruppo).
+
+Parametri:
+  - chat_id (string): ID della chat (ottenibile da chat_message_search del connector ms365 Anthropic)
+  - body (string): Contenuto del messaggio (HTML o testo)
+  - content_type ("html" | "text", default "html"): Formato del contenuto
+
+Restituisce l'ID del messaggio e il link diretto.
+
+Usa chat_message_search del connector ms365 Anthropic per trovare la chat e ottenere il chat_id, poi questo tool per inviare il messaggio.`,
+    inputSchema: SendChatMessageInputSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
+  },
+  async (params) => handleSendChatMessage(params)
+);
+
+server.registerTool(
+  "m365_reply_to_message",
+  {
+    title: "Rispondi a Messaggio Teams",
+    description: `Rispondi a un messaggio esistente in Microsoft Teams (canale o chat).
+
+Parametri:
+  - context ("channel" | "chat"): Tipo di contesto del messaggio
+  - team_id (string, se context="channel"): ID del team
+  - channel_id (string, se context="channel"): ID del canale
+  - chat_id (string, se context="chat"): ID della chat
+  - message_id (string): ID del messaggio a cui rispondere
+  - body (string): Contenuto della risposta
+  - content_type ("html" | "text", default "html"): Formato del contenuto
+
+Restituisce l'ID della risposta e il link diretto.
+
+Per i canali: usa m365_list_teams_and_channels per team_id/channel_id.
+Per le chat: usa chat_message_search del connector ms365 Anthropic per chat_id e message_id.`,
+    inputSchema: ReplyToMessageInputSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
+  },
+  async (params) => handleReplyToMessage(params)
 );
 
 // ── Start ────────────────────────────────────────────────

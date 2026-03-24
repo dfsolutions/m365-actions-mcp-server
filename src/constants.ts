@@ -12,6 +12,10 @@ export const GRAPH_SCOPES = [
   "Mail.Send",
   "Mail.Read",
   "Calendars.ReadWrite",
+  "Chat.ReadWrite",
+  "ChannelMessage.Send",
+  "Team.ReadBasic.All",
+  "Channel.ReadBasic.All",
   "User.Read",
   "offline_access",
 ];

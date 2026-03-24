@@ -76,3 +76,20 @@ export interface GraphErrorResponse {
     message?: string;
   };
 }
+
+// ── Teams types ─────────────────────────────────────────
+
+export interface TeamsChatMessagePayload {
+  body: {
+    contentType: "html" | "text";
+    content: string;
+  };
+}
+
+export interface TeamsChannelMessagePayload {
+  body: {
+    contentType: "html" | "text";
+    content: string;
+  };
+  subject?: string;
+}
