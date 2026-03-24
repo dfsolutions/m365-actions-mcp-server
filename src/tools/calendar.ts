@@ -39,6 +39,14 @@ export const CreateEventInputSchema = z
       .boolean()
       .default(false)
       .describe("Se true, crea un meeting Teams associato (default: false)"),
+    sensitivity: z
+      .enum(["normal", "personal", "private", "confidential"])
+      .default("normal")
+      .describe("Visibilità: normal (default), personal, private (nasconde dettagli agli altri), confidential"),
+    show_as: z
+      .enum(["free", "tentative", "busy", "oof", "workingElsewhere", "unknown"])
+      .default("busy")
+      .describe("Stato disponibilità: busy (default), free, tentative, oof (fuori ufficio), workingElsewhere"),
     timezone: z
       .string()
       .default(DEFAULT_TIMEZONE)
@@ -73,6 +81,14 @@ export const UpdateEventInputSchema = z
       .boolean()
       .optional()
       .describe("Attiva/disattiva meeting Teams (opzionale)"),
+    sensitivity: z
+      .enum(["normal", "personal", "private", "confidential"])
+      .optional()
+      .describe("Visibilità: normal, personal, private (nasconde dettagli agli altri), confidential"),
+    show_as: z
+      .enum(["free", "tentative", "busy", "oof", "workingElsewhere", "unknown"])
+      .optional()
+      .describe("Stato disponibilità: busy, free, tentative, oof (fuori ufficio), workingElsewhere"),
     timezone: z
       .string()
       .default(DEFAULT_TIMEZONE)
@@ -122,6 +138,12 @@ export async function handleCreateEvent(params: CreateEventInput): Promise<{
         : {}),
       ...(params.is_online_meeting
         ? { isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness" as const }
+        : {}),
+      ...(params.sensitivity !== "normal"
+        ? { sensitivity: params.sensitivity }
+        : {}),
+      ...(params.show_as !== "busy"
+        ? { showAs: params.show_as }
         : {}),
     };
 
@@ -184,6 +206,12 @@ export async function handleUpdateEvent(params: UpdateEventInput): Promise<{
       if (params.is_online_meeting) {
         payload.onlineMeetingProvider = "teamsForBusiness";
       }
+    }
+    if (params.sensitivity) {
+      payload.sensitivity = params.sensitivity;
+    }
+    if (params.show_as) {
+      payload.showAs = params.show_as;
     }
 
     const event = await client

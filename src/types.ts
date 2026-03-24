@@ -43,6 +43,8 @@ export interface CalendarEventPayload {
   }>;
   isOnlineMeeting?: boolean;
   onlineMeetingProvider?: "teamsForBusiness";
+  sensitivity?: "normal" | "personal" | "private" | "confidential";
+  showAs?: "free" | "tentative" | "busy" | "oof" | "workingElsewhere" | "unknown";
 }
 
 export interface CalendarEventUpdatePayload {
@@ -68,6 +70,8 @@ export interface CalendarEventUpdatePayload {
   }>;
   isOnlineMeeting?: boolean;
   onlineMeetingProvider?: "teamsForBusiness";
+  sensitivity?: "normal" | "personal" | "private" | "confidential";
+  showAs?: "free" | "tentative" | "busy" | "oof" | "workingElsewhere" | "unknown";
 }
 
 export interface GraphErrorResponse {
