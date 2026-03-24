@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+﻿import dotenv from "dotenv";
 dotenv.config();
 
 export const M365_CLIENT_ID = process.env.M365_CLIENT_ID ?? "";
@@ -11,6 +11,7 @@ export const M365_USER_EMAIL = process.env.M365_USER_EMAIL ?? "";
 export const GRAPH_SCOPES = [
   "Mail.Send",
   "Mail.Read",
+  "Mail.Read.Shared",
   "Calendars.ReadWrite",
   "Chat.ReadWrite",
   "ChannelMessage.Send",

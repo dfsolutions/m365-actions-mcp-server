@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
  * m365-actions-mcp-server
  *
@@ -20,6 +20,11 @@ import {
   handleReplyMail,
   handleGetAttachments,
 } from "./tools/mail.js";
+
+import {
+  SearchMailInputSchema,
+  handleSearchMail,
+} from "./tools/mail-search.js";
 
 import {
   CreateEventInputSchema,
@@ -126,6 +131,38 @@ Usa outlook_email_search per trovare la mail, poi questo tool per scaricare gli 
   async (params) => handleGetAttachments(params)
 );
 
+
+server.registerTool(
+  "m365_search_shared_mail",
+  {
+    title: "Cerca Mail in Casella Delegata (Microsoft 365)",
+    description: `Cerca email in una casella delegata/condivisa di Microsoft 365 (es. df@dfsolutions.it, amministrazione@dfsolutions.it).
+
+IMPORTANTE: Questo tool serve SOLO per cercare nelle caselle delegate/condivise.
+Per la casella personale dell'utente, usa outlook_email_search del connector ms365 Anthropic.
+
+Parametri:
+  - mailbox (string, OBBLIGATORIO): Email della casella delegata (es. df@dfsolutions.it)
+  - query (string, opzionale): Ricerca full-text in oggetto e corpo
+  - sender (string, opzionale): Filtra per mittente
+  - subject (string, opzionale): Filtra per oggetto
+  - folder (string, opzionale): Cartella specifica (es. Inbox, Sent Items)
+  - after/before (string, opzionale): Range date (ISO 8601)
+  - has_attachments (boolean, opzionale): Solo mail con allegati
+  - is_read (boolean, opzionale): Filtra per stato lettura
+  - limit (number, default 10, max 50): Numero risultati
+
+Restituisce lista di mail con ID, mittente, oggetto, data, anteprima e link web.`,
+    inputSchema: SearchMailInputSchema,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+  },
+  async (params) => handleSearchMail(params)
+);
 // ── Calendar Tools ───────────────────────────────────────
 
 server.registerTool(
@@ -334,3 +371,4 @@ main().catch((error) => {
   console.error("Errore fatale:", error);
   process.exit(1);
 });
+
