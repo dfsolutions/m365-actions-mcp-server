@@ -1,10 +1,10 @@
 # m365-actions-mcp-server
 
-MCP server that adds **write operations** to Microsoft 365 — the missing piece that turns Anthropic's read-only ms365 connector into a full bidirectional integration.
+MCP server that adds **write operations** and **shared mailbox search** to Microsoft 365 — the missing piece that turns Anthropic's read-only ms365 connector into a full bidirectional integration.
 
 ## Why this exists
 
-Anthropic's built-in Microsoft 365 connector gives Claude powerful read access: searching emails, browsing calendars, finding Teams messages, querying SharePoint. But it **cannot send, create, update, or delete anything**. This server fills that gap.
+Anthropic's built-in Microsoft 365 connector gives Claude powerful read access: searching emails, browsing calendars, finding Teams messages, querying SharePoint. But it **cannot send, create, update, or delete anything**, and it has **limited support for shared/delegated mailboxes**. This server fills both gaps.
 
 With both connectors running side by side, Claude can complete full workflows end-to-end: read an email and reply to it, check calendar availability and book a meeting, find a Teams conversation and respond — all without leaving the chat.
 
@@ -17,6 +17,7 @@ With both connectors running side by side, Claude can complete full workflows en
 | `m365_send_mail` | Send a new email | — |
 | `m365_reply_mail` | Reply to an existing email (reply / reply-all) | `outlook_email_search` (Anthropic) to get message ID |
 | `m365_get_attachments` | Download attachments from an email | `outlook_email_search` (Anthropic) to get message ID |
+| `m365_search_shared_mail` | Search emails in shared/delegated mailboxes | Standalone, uses Graph API /users/{mailbox}/messages with KQL search |
 
 ### Calendar
 
@@ -49,6 +50,19 @@ sharepoint_search             ──→    (read-only, no write needed)
 
 Claude automatically chains these tools together. For example: "Find the email from Marco about the invoice and reply saying we'll pay by Friday" triggers `outlook_email_search` (Anthropic) followed by `m365_reply_mail` (this server).
 
+## Shared Mailbox Search
+
+The m365_search_shared_mail tool fills a gap in the Anthropic connector: reliable search across shared/delegated mailboxes. It accesses /users/{mailbox}/messages directly via Microsoft Graph API, supporting:
+
+- **KQL search** (from:, subject:, free text) via the search parameter
+- **Date range filtering** via OData filter
+- **Pagination fallback** with client-side filtering when search is unavailable
+- **Folder targeting** (Inbox, Sent Items, etc.)
+
+This is needed because the Anthropic connector outlook_email_search has unreliable indexing for shared mailboxes, and may miss emails in high-volume mailboxes.
+
+The Mail.Read.Shared delegated permission must be granted in Azure AD for this tool to work.
+
 ## Prerequisites
 
 - Node.js >= 18
@@ -64,6 +78,7 @@ Claude automatically chains these tools together. For example: "Find the email f
 6. Add **Delegated** permissions (API permissions -> Microsoft Graph):
    - `Mail.Send`
    - `Mail.Read`
+   - `Mail.Read.Shared`
    - `Calendars.ReadWrite`
    - `Chat.ReadWrite`
    - `ChannelMessage.Send`
