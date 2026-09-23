@@ -127,6 +127,11 @@ export const GetAttachmentsInputSchema = z
       .string()
       .optional()
       .describe("Percorso cartella dove salvare gli allegati (opzionale, default: cartella corrente)"),
+    mailbox: z
+      .string()
+      .email()
+      .optional()
+      .describe("Casella delegata/condivisa (es. df@dfsolutions.it). Se omesso usa la casella dell'utente autenticato"),
   })
   .strict();
 
@@ -244,7 +249,11 @@ export async function handleGetAttachments(params: GetAttachmentsInput): Promise
     const client = await getGraphClient();
 
     const response = await client
-      .api(`/me/messages/${params.message_id}/attachments`)
+      .api(
+        params.mailbox
+          ? `/users/${encodeURIComponent(params.mailbox)}/messages/${encodeURIComponent(params.message_id)}/attachments`
+          : `/me/messages/${encodeURIComponent(params.message_id)}/attachments`
+      )
       .get();
 
     const attachments = response.value as Array<{

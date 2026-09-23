@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * m365-actions-mcp-server
  *
@@ -118,6 +118,7 @@ server.registerTool(
 Parametri:
   - message_id (string): ID del messaggio (ottenibile da outlook_email_search)
   - save_to (string, opzionale): Percorso cartella dove salvare i file
+  - mailbox (string, opzionale): Casella delegata/condivisa (es. df@dfsolutions.it); se omesso usa la casella personale
 
 Restituisce la lista dei file scaricati con nome, percorso e dimensione.
 
