@@ -3,7 +3,65 @@ import fs from "fs";
 import path from "path";
 import { getGraphClient } from "../graphClient.js";
 import { handleGraphError } from "../utils/errors.js";
-import type { SendMailPayload, MailRecipient } from "../types.js";
+import type { SendMailPayload, MailRecipient, FileAttachment } from "../types.js";
+
+// Limite Graph sendMail: ~4MB totali per richiesta. Tieniamo margine.
+const MAX_TOTAL_ATTACHMENTS_BYTES = 3 * 1024 * 1024; // 3 MB
+
+function guessContentType(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  const map: Record<string, string> = {
+    ".pdf": "application/pdf",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".ppt": "application/vnd.ms-powerpoint",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".txt": "text/plain",
+    ".csv": "text/csv",
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".json": "application/json",
+    ".xml": "application/xml",
+    ".zip": "application/zip",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+  };
+  return map[ext] ?? "application/octet-stream";
+}
+
+function buildAttachments(paths: string[]): FileAttachment[] {
+  const result: FileAttachment[] = [];
+  let totalBytes = 0;
+  for (const p of paths) {
+    if (!fs.existsSync(p)) {
+      throw new Error(`File allegato non trovato: ${p}`);
+    }
+    const stat = fs.statSync(p);
+    if (!stat.isFile()) {
+      throw new Error(`Il path indicato non è un file: ${p}`);
+    }
+    totalBytes += stat.size;
+    if (totalBytes > MAX_TOTAL_ATTACHMENTS_BYTES) {
+      throw new Error(
+        `Allegati troppo grandi: il totale supera ${MAX_TOTAL_ATTACHMENTS_BYTES / (1024 * 1024)} MB. ` +
+          `Graph sendMail con allegati inline ha un limite ~4MB.`
+      );
+    }
+    const buffer = fs.readFileSync(p);
+    result.push({
+      "@odata.type": "#microsoft.graph.fileAttachment",
+      name: path.basename(p),
+      contentType: guessContentType(p),
+      contentBytes: buffer.toString("base64"),
+    });
+  }
+  return result;
+}
 
 // ── Schemas ──────────────────────────────────────────────
 
@@ -29,6 +87,12 @@ export const SendMailInputSchema = z
       .enum(["HTML", "Text"])
       .default("HTML")
       .describe("Tipo di contenuto: HTML (default) o Text"),
+    attachments: z
+      .array(z.string().min(1))
+      .optional()
+      .describe(
+        "Lista di percorsi assoluti a file locali da allegare. Limite totale ~3 MB (Graph sendMail inline)."
+      ),
   })
   .strict();
 
@@ -84,6 +148,11 @@ export async function handleSendMail(params: SendMailInput): Promise<{
   try {
     const client = await getGraphClient();
 
+    const attachments =
+      params.attachments && params.attachments.length > 0
+        ? buildAttachments(params.attachments)
+        : undefined;
+
     const payload: SendMailPayload = {
       message: {
         subject: params.subject,
@@ -93,23 +162,31 @@ export async function handleSendMail(params: SendMailInput): Promise<{
         },
         toRecipients: toRecipients(params.to),
         ...(params.cc ? { ccRecipients: toRecipients(params.cc) } : {}),
+        ...(attachments ? { attachments } : {}),
       },
     };
 
     await client.api("/me/sendMail").post(payload);
 
     const recipients = Array.isArray(params.to) ? params.to.join(", ") : params.to;
+    const attachmentNames = attachments?.map((a) => a.name) ?? [];
     const output = {
       status: "sent",
       to: recipients,
       subject: params.subject,
+      attachments: attachmentNames,
     };
+
+    const attachmentSuffix =
+      attachmentNames.length > 0
+        ? ` con ${attachmentNames.length} allegato/i: ${attachmentNames.join(", ")}`
+        : "";
 
     return {
       content: [
         {
           type: "text" as const,
-          text: `Mail inviata con successo a ${recipients} — oggetto: "${params.subject}"`,
+          text: `Mail inviata con successo a ${recipients} — oggetto: "${params.subject}"${attachmentSuffix}`,
         },
       ],
       structuredContent: output,

@@ -67,10 +67,12 @@ Parametri:
   - body (string): Corpo della mail (HTML di default, o testo semplice)
   - cc (string | string[], opzionale): Destinatari in copia
   - content_type ("HTML" | "Text", default "HTML"): Formato del corpo
+  - attachments (string[], opzionale): Lista di percorsi assoluti a file locali da allegare.
+      Limite totale ~3 MB per richiesta (limite Graph sendMail inline).
 
-Restituisce conferma di invio con destinatari e oggetto.
+Restituisce conferma di invio con destinatari, oggetto e nomi degli allegati.
 
-Usa questo tool per inviare nuove email. Per rispondere a una mail esistente, usa m365_reply_mail.`,
+Usa questo tool per inviare nuove email con o senza allegati. Per rispondere a una mail esistente, usa m365_reply_mail.`,
     inputSchema: SendMailInputSchema,
     annotations: {
       readOnlyHint: false,

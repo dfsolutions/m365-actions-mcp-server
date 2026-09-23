@@ -14,7 +14,7 @@ With both connectors running side by side, Claude can complete full workflows en
 
 | Tool | Description | Works with |
 |------|-------------|------------|
-| `m365_send_mail` | Send a new email | — |
+| `m365_send_mail` | Send a new email, with optional file attachments (local paths, ~3 MB total) | — |
 | `m365_reply_mail` | Reply to an existing email (reply / reply-all) | `outlook_email_search` (Anthropic) to get message ID |
 | `m365_get_attachments` | Download attachments from an email | `outlook_email_search` (Anthropic) to get message ID |
 | `m365_search_shared_mail` | Search emails in shared/delegated mailboxes | Standalone, uses Graph API /users/{mailbox}/messages with KQL search |

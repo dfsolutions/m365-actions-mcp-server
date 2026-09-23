@@ -1,5 +1,9 @@
-﻿import dotenv from "dotenv";
-dotenv.config();
+import dotenv from "dotenv";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+// .env nella root del progetto, indipendente dalla cwd con cui Claude avvia il server
+dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "..", ".env") });
 
 export const M365_CLIENT_ID = process.env.M365_CLIENT_ID ?? "";
 export const M365_CLIENT_SECRET = process.env.M365_CLIENT_SECRET ?? "";

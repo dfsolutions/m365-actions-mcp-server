@@ -4,6 +4,13 @@ export interface MailRecipient {
   };
 }
 
+export interface FileAttachment {
+  "@odata.type": "#microsoft.graph.fileAttachment";
+  name: string;
+  contentType?: string;
+  contentBytes: string;
+}
+
 export interface SendMailPayload {
   message: {
     subject: string;
@@ -13,6 +20,7 @@ export interface SendMailPayload {
     };
     toRecipients: MailRecipient[];
     ccRecipients?: MailRecipient[];
+    attachments?: FileAttachment[];
   };
 }
 
