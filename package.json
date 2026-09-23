@@ -17,11 +17,12 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "tsc"
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/dfsolutions/m365-actions-mcp-server.git"
   },
   "engines": {
     "node": ">=18"
